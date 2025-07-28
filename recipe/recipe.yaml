@@ -1,6 +1,6 @@
 context:
-  name: s3manager 
-  version: "0.5.0"
+  name: s3manager
+  version: "0.6.0"
 
 package:
   name: ${{ name|lower }}
@@ -8,7 +8,7 @@ package:
 
 source:
   - url: https://github.com/cloudlena/${{ name }}/archive/refs/tags/v${{ version }}.tar.gz
-    sha256: 97da3dd54f2e7275a48418d416b60befd663d3316435f2e66149278070568995
+    sha256: b46c587a0e7023ea0e71a14360488d71324f844eca611b1e973e9ae2d5b4ff05
     target_directory: src
 
 build:
@@ -28,14 +28,14 @@ requirements:
 tests:
   - script:
       - if: win
-        then: 
+        then:
           - s3manager.exe > output.txt 2>&1
           - findstr /c:"please provide ACCESS_KEY_ID" output.txt
         else: s3manager 2>&1 | grep -q "please provide ACCESS_KEY_ID"
 
 about:
   homepage: https://github.com/cloudlena/s3manager
-  summary: A Web GUI for your S3 buckets 
+  summary: A Web GUI for your S3 buckets
   license: Apache-2.0
   license_file:
     - src/LICENSE
