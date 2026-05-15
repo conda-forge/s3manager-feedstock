@@ -1,6 +1,6 @@
 context:
   name: s3manager
-  version: "0.6.0"
+  version: "0.7.0"
 
 package:
   name: ${{ name|lower }}
@@ -8,7 +8,7 @@ package:
 
 source:
   - url: https://github.com/cloudlena/${{ name }}/archive/refs/tags/v${{ version }}.tar.gz
-    sha256: b46c587a0e7023ea0e71a14360488d71324f844eca611b1e973e9ae2d5b4ff05
+    sha256: b021f3f3234217939435182a5b35bdc651504c341f8ba2b0e2953de605f1c7da
     target_directory: src
 
 build:
