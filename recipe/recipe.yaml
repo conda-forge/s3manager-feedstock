@@ -15,10 +15,20 @@ build:
   number: 0
   script:
     - cd src
-    - go-licenses save ./ --save_path ../library_licenses --ignore github.com/cloudlena/s3manager
+    # github.com/cloudlena/adapters is Apache-2.0 licensed (see
+    # https://github.com/cloudlena/adapters/blob/HEAD/LICENSE), but its LICENSE
+    # file lacks the canonical Apache-2.0 header so go-licenses cannot
+    # auto-classify it. Ignore it during go-licenses scan and copy the LICENSE
+    # in manually so it still ships with the package.
+    - go-licenses save ./ --save_path ../library_licenses --ignore github.com/cloudlena/s3manager --ignore github.com/cloudlena/adapters
     - if: win
-      then: go build -v -buildmode=pie -trimpath -modcacherw -o %LIBRARY_BIN%\s3manager.exe -ldflags="-s" ./main.go
-      else: go build -v -buildmode=pie -trimpath -modcacherw -o $PREFIX/bin/s3manager -ldflags="-s -w" ./main.go
+      then:
+        - for /d %%D in ("%GOMODCACHE%\github.com\cloudlena\adapters@*") do xcopy /Y /I "%%D\LICENSE" "..\library_licenses\github.com\cloudlena\adapters\"
+        - go build -v -buildmode=pie -trimpath -modcacherw -o %LIBRARY_BIN%\s3manager.exe -ldflags="-s" ./main.go
+      else:
+        - mkdir -p ../library_licenses/github.com/cloudlena/adapters
+        - cp "$(go env GOMODCACHE)"/github.com/cloudlena/adapters@*/LICENSE ../library_licenses/github.com/cloudlena/adapters/LICENSE
+        - go build -v -buildmode=pie -trimpath -modcacherw -o $PREFIX/bin/s3manager -ldflags="-s -w" ./main.go
 
 requirements:
   build:
