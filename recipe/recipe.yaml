@@ -39,8 +39,10 @@ tests:
   - script:
       - if: win
         then:
-          - s3manager.exe > output.txt 2>&1
-          - findstr /c:"no S3 instances configured" output.txt
+          # s3manager.exe exits non-zero on missing config; chain with `&` so cmd's
+          # errorlevel after the redirect is not checked, then findstr enforces
+          # the expected message.
+          - s3manager.exe > output.txt 2>&1 & findstr /c:"no S3 instances configured" output.txt
         else: s3manager 2>&1 | grep -q "no S3 instances configured"
 
 about:
