@@ -40,8 +40,8 @@ tests:
       - if: win
         then:
           - s3manager.exe > output.txt 2>&1
-          - findstr /c:"please provide ACCESS_KEY_ID" output.txt
-        else: s3manager 2>&1 | grep -q "please provide ACCESS_KEY_ID"
+          - findstr /c:"no S3 instances configured" output.txt
+        else: s3manager 2>&1 | grep -q "no S3 instances configured"
 
 about:
   homepage: https://github.com/cloudlena/s3manager
