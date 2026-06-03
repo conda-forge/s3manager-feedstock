@@ -1,6 +1,6 @@
 context:
   name: s3manager
-  version: "0.6.0"
+  version: "0.7.0"
 
 package:
   name: ${{ name|lower }}
@@ -8,17 +8,27 @@ package:
 
 source:
   - url: https://github.com/cloudlena/${{ name }}/archive/refs/tags/v${{ version }}.tar.gz
-    sha256: b46c587a0e7023ea0e71a14360488d71324f844eca611b1e973e9ae2d5b4ff05
+    sha256: b021f3f3234217939435182a5b35bdc651504c341f8ba2b0e2953de605f1c7da
     target_directory: src
 
 build:
   number: 0
   script:
     - cd src
-    - go-licenses save ./ --save_path ../library_licenses --ignore github.com/cloudlena/s3manager
+    # github.com/cloudlena/adapters is Apache-2.0 licensed (see
+    # https://github.com/cloudlena/adapters/blob/HEAD/LICENSE), but its LICENSE
+    # file lacks the canonical Apache-2.0 header so go-licenses cannot
+    # auto-classify it. Ignore it during go-licenses scan and copy the LICENSE
+    # in manually so it still ships with the package.
+    - go-licenses save ./ --save_path ../library_licenses --ignore github.com/cloudlena/s3manager --ignore github.com/cloudlena/adapters
     - if: win
-      then: go build -v -buildmode=pie -trimpath -modcacherw -o %LIBRARY_BIN%\s3manager.exe -ldflags="-s" ./main.go
-      else: go build -v -buildmode=pie -trimpath -modcacherw -o $PREFIX/bin/s3manager -ldflags="-s -w" ./main.go
+      then:
+        - for /d %%D in ("%GOMODCACHE%\github.com\cloudlena\adapters@*") do xcopy /Y /I "%%D\LICENSE" "..\library_licenses\github.com\cloudlena\adapters\"
+        - go build -v -buildmode=pie -trimpath -modcacherw -o %LIBRARY_BIN%\s3manager.exe -ldflags="-s" ./main.go
+      else:
+        - mkdir -p ../library_licenses/github.com/cloudlena/adapters
+        - cp "$(go env GOMODCACHE)"/github.com/cloudlena/adapters@*/LICENSE ../library_licenses/github.com/cloudlena/adapters/LICENSE
+        - go build -v -buildmode=pie -trimpath -modcacherw -o $PREFIX/bin/s3manager -ldflags="-s -w" ./main.go
 
 requirements:
   build:
@@ -29,9 +39,11 @@ tests:
   - script:
       - if: win
         then:
-          - s3manager.exe > output.txt 2>&1
-          - findstr /c:"please provide ACCESS_KEY_ID" output.txt
-        else: s3manager 2>&1 | grep -q "please provide ACCESS_KEY_ID"
+          # s3manager.exe exits non-zero on missing config; chain with `&` so cmd's
+          # errorlevel after the redirect is not checked, then findstr enforces
+          # the expected message.
+          - s3manager.exe > output.txt 2>&1 & findstr /c:"no S3 instances configured" output.txt
+        else: s3manager 2>&1 | grep -q "no S3 instances configured"
 
 about:
   homepage: https://github.com/cloudlena/s3manager
